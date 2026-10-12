@@ -41,6 +41,7 @@ create_evergreen_role() {
 load_evergreen_database() {
     cd /usr/src/evergreen
     perl Open-ILS/src/support-scripts/eg_db_config \
+        --config-file /openils/conf/opensrf.xml.example \
         --create-database --create-schema \
         --user evergreen --password evergreen \
         --hostname 127.0.0.1 --port 5432 --database evergreen \
@@ -51,6 +52,7 @@ load_evergreen_database() {
 reset_admin_password() {
     cd /usr/src/evergreen
     perl Open-ILS/src/support-scripts/eg_db_config \
+        --config-file /openils/conf/opensrf.xml.example \
         --user evergreen --password evergreen \
         --hostname 127.0.0.1 --port 5432 --database evergreen \
         --admin-user admin --admin-pass demo123 < /dev/null

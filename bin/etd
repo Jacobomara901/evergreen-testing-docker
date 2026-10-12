@@ -17,11 +17,6 @@ compose() {
     docker compose -p "${COMPOSE_PROJECT_NAME:-egdev}" "$@"
 }
 
-build_images() {
-    compose build "$@" evergreen
-    compose build "$@" db
-}
-
 usage() {
     cat <<USAGE
 etd manages the evergreen-testing-docker stack.
@@ -58,7 +53,7 @@ case "$command" in
     shell) compose exec --user opensrf evergreen bash ;;
     psql) compose exec --env PGPASSWORD=evergreen db psql -U evergreen -d evergreen ;;
     export) compose exec --user opensrf evergreen aspen-export ;;
-    build) build_images "$@" ;;
+    build) compose build "$@" ;;
     pull) compose pull "$@" ;;
     push) compose push "$@" ;;
     status) compose ps "$@" ;;

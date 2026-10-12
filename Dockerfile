@@ -1,4 +1,4 @@
-FROM debian:bookworm
+FROM debian:bookworm AS base
 
 ARG EG_REPO=https://github.com/evergreen-library-system/Evergreen.git
 ARG EG_REF=rel_3_17
@@ -85,6 +85,62 @@ RUN set -eux; \
     cp -a Open-ILS/examples /usr/src/eg-runtime/Open-ILS/; \
     rm -rf /usr/src/evergreen; \
     mv /usr/src/eg-runtime /usr/src/evergreen
+
+FROM base AS loader
+
+ARG EG_SAMPLE_DATA=concerto_enhanced
+
+ENV EG_SAMPLE_DATA=${EG_SAMPLE_DATA}
+
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+      postgresql-16 \
+      postgresql-contrib-16 \
+      postgresql-plperl-16; \
+    rm -rf /var/lib/apt/lists/*
+
+RUN set -eux; \
+    sample=/usr/share/postgresql/16/postgresql.conf.sample; \
+    perl -pi -e "s{^#?listen_addresses\s*=\s*\S+.*}{listen_addresses = '*'}" "$sample"; \
+    grep -qF "listen_addresses = '*'" "$sample"; \
+    printf '%s\n' 'jit = off' 'jit_above_cost = -1' >> "$sample"
+
+COPY files/db-load /usr/local/bin/db-load
+RUN chmod 755 /usr/local/bin/db-load && /usr/local/bin/db-load
+
+FROM postgres:16-bookworm AS db
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PGDATA=/var/lib/postgresql/evergreen
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      cpanminus \
+      gcc \
+      libbusiness-isbn-perl \
+      libjson-xs-perl \
+      liblibrary-callnumber-lc-perl \
+      libmarc-record-perl \
+      libmarc-xml-perl \
+      libmime-base32-perl \
+      libperl-dev \
+      librose-uri-perl \
+      libuuid-tiny-perl \
+      libxml-libxml-perl \
+      libxml-libxslt-perl \
+      make \
+      postgresql-contrib-16 \
+      postgresql-plperl-16 \
+ && cpanm --notest --quiet String::KeyboardDistance Pass::OTP Text::Levenshtein::Damerau::XS \
+ && apt-get purge -y --auto-remove cpanminus gcc libperl-dev make \
+ && rm -rf /var/lib/apt/lists/* /root/.cpanm
+
+RUN printf '%s\n' 'jit = off' 'jit_above_cost = -1' >> /usr/share/postgresql/postgresql.conf.sample
+
+COPY --from=loader --chown=postgres:postgres /var/lib/postgresql/evergreen /var/lib/postgresql/evergreen
+
+FROM base AS app
 
 RUN set -eux; \
     cd /usr/src/evergreen/Open-ILS/examples/apache_24; \

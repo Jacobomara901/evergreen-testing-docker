@@ -4,6 +4,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: app
       args:
         EG_REPO: ${EG_REPO:-https://github.com/evergreen-library-system/Evergreen.git}
         EG_REF: ${EG_REF:-rel_3_17}
@@ -32,10 +33,14 @@ services:
     image: ${ETD_DB_IMAGE:-git.homeserv.uk/jacobomara901/evergreen-testing-db}:${ETD_TAG:-latest}
     build:
       context: .
-      dockerfile: Dockerfile.db
+      dockerfile: Dockerfile
+      target: db
       args:
-        ETD_IMAGE: ${ETD_IMAGE:-git.homeserv.uk/jacobomara901/evergreen-testing}
-        ETD_TAG: ${ETD_TAG:-latest}
+        EG_REPO: ${EG_REPO:-https://github.com/evergreen-library-system/Evergreen.git}
+        EG_REF: ${EG_REF:-rel_3_17}
+        OSRF_REPO: ${OSRF_REPO:-https://github.com/evergreen-library-system/OpenSRF.git}
+        OSRF_REF: ${OSRF_REF:-main}
+        EG_STAFF_CLIENT: ${EG_STAFF_CLIENT:-1}
         EG_SAMPLE_DATA: ${EG_SAMPLE_DATA:-concerto_enhanced}
     environment:
       POSTGRES_USER: evergreen
