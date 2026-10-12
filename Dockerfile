@@ -45,11 +45,16 @@ RUN git clone --depth 1 --branch "$EG_REF" "$EG_REPO" /usr/src/evergreen \
  && rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
-    [ "$EG_STAFF_CLIENT" = 1 ] || exit 0; \
     cd /usr/src/evergreen; \
     apt-get update; \
     make -f Open-ILS/src/extras/Makefile.install debian-bookworm-developer; \
+    rm -f /usr/src/evergreen/node-*.tar.xz; \
     rm -rf /var/lib/apt/lists/*
+
+RUN set -eux; \
+    cd /usr/src/evergreen/Open-ILS/web/opac/deps; \
+    npm ci; \
+    rm -rf /root/.npm
 
 RUN set -eux; \
     [ "$EG_STAFF_CLIENT" = 1 ] || exit 0; \
