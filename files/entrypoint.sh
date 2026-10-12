@@ -9,7 +9,7 @@ export PGPASSWORD=evergreen
 export PGDATABASE=evergreen
 
 EG_HTTP_PORT="${EG_HTTP_PORT:-8086}"
-EG_HTTPS_PORT="${EG_HTTPS_PORT:-443}"
+EG_HTTPS_PORT="${EG_HTTPS_PORT:-8446}"
 EG_SERVICES="${EG_SERVICES:-full}"
 
 osrf_config=/openils/conf/opensrf.xml
