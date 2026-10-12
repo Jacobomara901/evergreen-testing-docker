@@ -33,15 +33,18 @@ etd: evergreen is ready
 Then open:
 
 - OPAC: http://localhost:8086/eg/opac/home
-- Staff client: https://localhost/eg2/en-US/staff/ (self signed certificate)
+- Staff client: https://localhost:8446/eg2/en-US/staff/ (self signed certificate)
 - Gateway: http://localhost:8086/osrf-gateway-v1
-- HTTPS: https://localhost/eg/opac/home (self signed certificate)
+- HTTPS: https://localhost:8446/eg/opac/home (self signed certificate)
 
-The staff client only works over HTTPS on port 443. Evergreen redirects
-`/eg2/` to `https://<the host you asked for>/eg2/en-US/`, and the websocket
-URL its JavaScript builds is `wss://<host>:443/osrf-websocket-translator`.
-Neither of those can be made to work on another port, so `EG_HTTPS_PORT`
-defaults to `443`. Change it and you lose the staff client, not the OPAC.
+The staff client only works over HTTPS. Evergreen redirects `/eg2/` to
+`https://<the host you asked for>/eg2/en-US/`, so the plain HTTP port sends
+you to an HTTPS URL on a port that does not speak HTTPS.
+
+The image patches one line of the installed OpenSRF JavaScript so the staff
+client's websocket follows the page's own host and port instead of a fixed
+443, which works because Apache proxies `/osrf-websocket-translator` on the
+same vhost.
 
 The `db-data` volume survives `bin/etd down`, so anything you change in
 the database is still there on the next start.
@@ -150,7 +153,7 @@ Copy `.env.example` to `.env` and edit it. `.env` is not tracked.
 | `ETD_DB_IMAGE` | `git.homeserv.uk/jacobomara901/evergreen-testing-db` | Database image |
 | `ETD_TAG` | `latest` | Tag for both images |
 | `EG_HTTP_PORT` | `8086` | Host port for Apache on 80 |
-| `EG_HTTPS_PORT` | `443` | Host port for Apache on 443, the staff client needs this to stay `443` |
+| `EG_HTTPS_PORT` | `8446` | Host port for Apache on 443 |
 | `EG_PSQL_PORT` | `5433` | Host port for PostgreSQL on 5432 |
 | `EG_SAMPLE_DATA` | `concerto_enhanced` | Sample data baked into the database image |
 | `EG_SERVICES` | `full` | `full` starts 33 OpenSRF services, `minimal` starts 14 |
