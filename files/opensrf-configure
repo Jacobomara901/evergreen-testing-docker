@@ -30,9 +30,11 @@ perl -pi -e 's{<max_spare_children>\d+</max_spare_children>}{<max_spare_children
 perl -pi -e 's{<unix_children>\d+</unix_children>}{<unix_children>3</unix_children>}g' "$conf/opensrf.xml"
 perl -0777 -pi -e 's{(<open-ils\.storage>.*?)<max_children>\d+</max_children>}{${1}<max_children>2</max_children>}s' "$conf/opensrf.xml"
 
+cp -f "$conf/opensrf.xml" "$conf/opensrf.xml.etd"
+
 cp -f "$conf/srfsh.xml.example" /home/opensrf/.srfsh.xml
 perl -pi -e "s{<password>.*</password>}{<password>$opensrf_bus_password</password>}" /home/opensrf/.srfsh.xml
 chown opensrf:opensrf /home/opensrf/.srfsh.xml
 chmod 600 /home/opensrf/.srfsh.xml
 
-echo "opensrf-configure: wrote opensrf_core.xml, opensrf.xml and .srfsh.xml"
+echo "opensrf-configure: wrote opensrf_core.xml, opensrf.xml, opensrf.xml.etd and .srfsh.xml"

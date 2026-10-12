@@ -9,6 +9,55 @@ export PGPASSWORD=evergreen
 export PGDATABASE=evergreen
 
 EG_HTTP_PORT="${EG_HTTP_PORT:-8086}"
+EG_SERVICES="${EG_SERVICES:-full}"
+
+osrf_config=/openils/conf/opensrf.xml
+
+staff_only_services=(
+    opensrf.math
+    opensrf.dbmath
+    open-ils.acq
+    open-ils.auth_proxy
+    open-ils.booking
+    open-ils.cat
+    open-ils.collections
+    open-ils.courses
+    open-ils.curbside
+    open-ils.ebook_api
+    open-ils.geo
+    open-ils.justintime
+    open-ils.qstore
+    open-ils.reporter
+    open-ils.reporter-store
+    open-ils.serial
+    open-ils.sip2
+    open-ils.url_verify
+    open-ils.vandelay
+)
+
+check_service_selection() {
+    if [ "$EG_SERVICES" = full ] || [ "$EG_SERVICES" = minimal ]; then
+        return 0
+    fi
+    echo "etd: EG_SERVICES must be 'full' or 'minimal', not '$EG_SERVICES'" >&2
+    exit 1
+}
+
+restore_opensrf_config() {
+    echo "etd: restoring the packaged opensrf.xml"
+    cp -f "$osrf_config.etd" "$osrf_config"
+}
+
+select_opensrf_services() {
+    if [ "$EG_SERVICES" != minimal ]; then
+        echo "etd: EG_SERVICES=full, starting every service"
+        return 0
+    fi
+    echo "etd: EG_SERVICES=minimal, dropping ${#staff_only_services[@]} services"
+    for service in "${staff_only_services[@]}"; do
+        perl -ni -e "print unless m{<appname>\s*\Q$service\E\s*</appname>}" "$osrf_config"
+    done
+}
 
 add_opensrf_domains_to_hosts() {
     if grep -q private.localhost /etc/hosts; then
@@ -106,10 +155,13 @@ finish_startup() {
 }
 
 rm -f /eg_ready
+check_service_selection
 add_opensrf_domains_to_hosts
 wait_for_database_server
+restore_opensrf_config
+select_opensrf_services
 point_opensrf_at_database
-chown opensrf:opensrf /openils/conf/opensrf.xml
+chown opensrf:opensrf "$osrf_config"
 start_redis
 start_memcached
 start_opensrf_services
