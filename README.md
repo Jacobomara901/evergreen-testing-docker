@@ -10,7 +10,7 @@ Aspen dev boxes and sandboxes connect to it over a Docker network.
 
 - Docker Engine and Docker Compose v2
 - About 8 GB of free disk for the images
-- About 1.5 GB of free RAM for a running stack
+- About 2.5 GB of free RAM for a running stack, or 1 GB with `EG_SERVICES=minimal`
 - A lot more disk and RAM if you build the images yourself
 
 ## Quick start
@@ -81,6 +81,33 @@ bin/etd up -d
 
 That takes about a minute.
 
+## Services
+
+Evergreen starts 33 OpenSRF services by default. Most of them are only used
+by the staff client, and each one costs about 110 MB. `EG_SERVICES` picks how
+many run. It is read at start time, so a `bin/etd stop` and `bin/etd start`
+is enough to change it.
+
+| Value | Services | Idle memory |
+|---|---|---|
+| `full` | 33, the default | about 2.1 GB |
+| `minimal` | 14 | about 1.2 GB |
+
+```shell
+EG_SERVICES=minimal bin/etd up -d
+```
+
+`minimal` keeps everything the OPAC, the gateway and the Aspen export use:
+`opensrf.settings`, `open-ils.actor`, `circ`, `search`, `supercat`, `cstore`,
+`pcrud`, `storage`, `fielder`, `trigger`, `hold-targeter`, `auth`,
+`auth_internal` and `auth_mfa`.
+
+It drops acquisitions, serials, booking, reports, vandelay, SIP2, course
+reserves, curbside, the link checker and the collections agency, so those
+parts of the staff client stop working. The OPAC also loses its SMS
+call-number feature, the reservations page, geographic sorting and compressed
+serial holdings.
+
 ## Connecting Aspen
 
 An Aspen dev box joins the `egdev_egnet` network with
@@ -120,6 +147,7 @@ Copy `.env.example` to `.env` and edit it. `.env` is not tracked.
 | `EG_HTTPS_PORT` | `8446` | Host port for Apache on 443 |
 | `EG_PSQL_PORT` | `5433` | Host port for PostgreSQL on 5432 |
 | `EG_SAMPLE_DATA` | `concerto_enhanced` | Sample data baked into the database image |
+| `EG_SERVICES` | `full` | `full` starts 33 OpenSRF services, `minimal` starts 14 |
 | `EG_REPO` | Evergreen on GitHub | Evergreen git remote |
 | `EG_REF` | `rel_3_17` | Evergreen branch or tag |
 | `OSRF_REPO` | OpenSRF on GitHub | OpenSRF git remote |
