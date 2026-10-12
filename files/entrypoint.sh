@@ -9,6 +9,7 @@ export PGPASSWORD=evergreen
 export PGDATABASE=evergreen
 
 EG_HTTP_PORT="${EG_HTTP_PORT:-8086}"
+EG_HTTPS_PORT="${EG_HTTPS_PORT:-443}"
 EG_SERVICES="${EG_SERVICES:-full}"
 
 osrf_config=/openils/conf/opensrf.xml
@@ -133,7 +134,7 @@ print_ready_banner() {
     cat <<BANNER
 etd: evergreen is ready
 etd:   opac          http://localhost:$EG_HTTP_PORT/eg/opac/home
-etd:   staff client  http://localhost:$EG_HTTP_PORT/eg2/en-US/staff/
+etd:   staff client  https://localhost:$EG_HTTPS_PORT/eg2/en-US/staff/
 etd:   gateway       http://localhost:$EG_HTTP_PORT/osrf-gateway-v1
 etd:   staff login   admin / demo123
 etd:   aspen export  /exports/aspen
