@@ -161,6 +161,13 @@ RUN set -eux; \
       '    ProxyPass /osrf-websocket-translator ws://127.0.0.1:7682 connectiontimeout=5 timeout=120' \
       '</IfModule>' >> /etc/apache2/eg_vhost.conf; \
     printf '%s\n' \
+      '<LocationMatch "^/eg2/(?![a-z]{2}-[A-Z]{2}/)">' \
+      '    ExpiresActive Off' \
+      '    <IfModule mod_headers.c>' \
+      '        Header always set Cache-Control "no-store"' \
+      '    </IfModule>' \
+      '</LocationMatch>' >> /etc/apache2/eg_vhost.conf; \
+    printf '%s\n' \
       '<IfModule mpm_prefork_module>' \
       '    StartServers            1' \
       '    MinSpareServers         1' \
