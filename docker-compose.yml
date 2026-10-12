@@ -10,6 +10,7 @@ services:
         OSRF_REPO: ${OSRF_REPO:-https://github.com/evergreen-library-system/OpenSRF.git}
         OSRF_REF: ${OSRF_REF:-main}
         EG_STAFF_CLIENT: ${EG_STAFF_CLIENT:-1}
+    hostname: evergreen
     depends_on:
       db:
         condition: service_healthy
