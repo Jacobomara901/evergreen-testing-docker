@@ -134,7 +134,8 @@ print_ready_banner() {
     cat <<BANNER
 etd: evergreen is ready
 etd:   opac          http://localhost:$EG_HTTP_PORT/eg/opac/home
-etd:   staff client  https://localhost:$EG_HTTPS_PORT/eg2/en-US/staff/
+etd:   staff client  http://localhost:$EG_HTTP_PORT/eg2/en-US/staff/
+etd:   staff https    https://localhost:$EG_HTTPS_PORT/eg2/en-US/staff/
 etd:   gateway       http://localhost:$EG_HTTP_PORT/osrf-gateway-v1
 etd:   staff login   admin / demo123
 etd:   aspen export  /exports/aspen
