@@ -136,8 +136,6 @@ RUN apt-get update \
  && apt-get purge -y --auto-remove cpanminus gcc libperl-dev make \
  && rm -rf /var/lib/apt/lists/* /root/.cpanm
 
-RUN printf '%s\n' 'jit = off' 'jit_above_cost = -1' >> /usr/share/postgresql/postgresql.conf.sample
-
 COPY --from=loader --chown=postgres:postgres /var/lib/postgresql/evergreen /var/lib/postgresql/evergreen
 
 FROM base AS app
