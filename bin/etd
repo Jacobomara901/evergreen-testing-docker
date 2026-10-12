@@ -1,0 +1,62 @@
+#!/bin/bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repo_root"
+
+env_file=.env
+if [ ! -f "$env_file" ]; then
+    env_file=.env.example
+fi
+
+set -a
+. "./$env_file"
+set +a
+
+compose() {
+    docker compose -p "${COMPOSE_PROJECT_NAME:-egdev}" "$@"
+}
+
+usage() {
+    cat <<USAGE
+etd manages the evergreen-testing-docker stack.
+
+Usage: bin/etd <command> [options]
+
+Commands:
+    up [-d]        Start the stack
+    down [-v]      Remove the stack, -v also removes the database volume
+    stop           Stop the containers
+    start          Start stopped containers
+    logs [-f]      Show the evergreen container logs
+    shell          Bash in the evergreen container as opensrf
+    psql           psql in the database container
+    export         Regenerate the Aspen export
+    build          Build the images from this repository
+    pull           Pull the published images
+    push           Push the built images
+    status         Show the container status
+USAGE
+}
+
+command="${1:-}"
+if [ "$#" -gt 0 ]; then
+    shift
+fi
+
+case "$command" in
+    up) compose up "$@" ;;
+    down) compose down "$@" ;;
+    stop) compose stop "$@" ;;
+    start) compose start "$@" ;;
+    logs) compose logs "$@" evergreen ;;
+    shell) compose exec --user opensrf evergreen bash ;;
+    psql) compose exec --env PGPASSWORD=evergreen db psql -U evergreen -d evergreen ;;
+    export) compose exec --user opensrf evergreen aspen-export ;;
+    build) compose build "$@" ;;
+    pull) compose pull "$@" ;;
+    push) compose push "$@" ;;
+    status) compose ps "$@" ;;
+    ""|-h|--help|help) usage ;;
+    *) echo "etd: unknown command '$command'" >&2; usage >&2; exit 1 ;;
+esac
