@@ -215,7 +215,10 @@ leaves the database image cached. A full load takes about 4 minutes.
 `EG_REF` and `OSRF_REF` pick the source. Evergreen 3.17 talks to OpenSRF
 over Redis, and only OpenSRF `main` carries the Redis transport, so that
 is the default. The GitHub mirror has no release tags on the Evergreen
-maintenance branches, so `EG_REF` names a branch.
+maintenance branches, so `EG_REF` names a branch. To pin a release instead,
+build against the project's own git server with
+`EG_REPO=git://git.evergreen-ils.org/Evergreen.git` and a release ref like
+`EG_REF=tags/rel_3_17_5`.
 
 `EG_STAFF_CLIENT=1` builds the AngularJS staff client under
 `Open-ILS/web/js/ui/default/staff` and the Angular staff client under
