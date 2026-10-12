@@ -124,6 +124,77 @@ parts of the staff client stop working. The OPAC also loses its SMS
 call-number feature, the reservations page, geographic sorting and compressed
 serial holdings.
 
+## Running more than one stack
+
+You can run several stacks at once. Each one is its own compose project, so
+each needs a different `COMPOSE_PROJECT_NAME`.
+
+`bin/etd` reads `.env`, but the environment of the caller wins. Anything you
+export on the command line beats the file, the same way docker compose
+treats its own env file. Keep `.env` for your defaults and override the rest
+per stack:
+
+```shell
+COMPOSE_PROJECT_NAME=eg2 EG_HTTP_PORT=8087 EG_HTTPS_PORT=8447 EG_PSQL_PORT=5434 bin/etd up -d
+```
+
+Set `ETD_ENV` to read a different file instead of `.env`.
+
+Without a proxy every stack publishes host ports, so these four have to
+differ per stack.
+
+| Variable | Why |
+|---|---|
+| `COMPOSE_PROJECT_NAME` | Names the containers, the network and the volume |
+| `EG_HTTP_PORT` | Host port for Apache on 80 |
+| `EG_HTTPS_PORT` | Host port for Apache on 443 |
+| `EG_PSQL_PORT` | Host port for PostgreSQL on 5432 |
+
+### Behind traefik
+
+Set `ETD_PROXY_NETWORK` to the name of an existing traefik network and
+`bin/etd` puts `compose/proxy.yml` on top of the compose file. The stack
+then publishes no host ports at all, joins that network and carries traefik
+labels. Nothing can clash, so a sandbox manager can start one stack per
+sandbox with nothing but a project name:
+
+```shell
+ETD_PROXY_NETWORK=proxy COMPOSE_PROJECT_NAME=eg-foo bin/etd up -d
+```
+
+The host name is built as `<prefix><instance><suffix><domain>`.
+
+| Variable | Default | What it does |
+|---|---|---|
+| `ETD_PROXY_NETWORK` | unset | External traefik network to join, and what turns the overlay on |
+| `EG_INSTANCE` | `COMPOSE_PROJECT_NAME` | Name used in the host name and in the traefik router names |
+| `EG_PREFIX` | empty | Goes before the instance |
+| `EG_SUFFIX` | empty | Goes after the instance |
+| `EG_DOMAIN` | `.localhost` | Goes last, leading dot included |
+
+With `EG_PREFIX=opac-`, `EG_INSTANCE=eg-foo` and
+`EG_DOMAIN=.sandboxes.localhost` the router answers on
+`opac-eg-foo.sandboxes.localhost`. It also answers on `eg-foo.localhost`, so
+a stack works locally without a domain of its own.
+
+Only port 80 goes through the proxy. The proxy serves HTTPS to the browser
+and talks to the container over plain HTTP, which the staff client is happy
+with. The database keeps no host port either, so reach it with
+`bin/etd psql`.
+
+### Aspen and more than one stack
+
+Aspen finds Evergreen by container name over the stack's own network, never
+by a host port. The container is always `<project>-evergreen-1`, so the
+project name is all the Aspen side needs:
+
+```shell
+adb up --ils evergreen -e eg2
+```
+
+That works the same whether the stack publishes ports or sits behind the
+proxy.
+
 ## Connecting Aspen
 
 An Aspen dev box joins the `egdev_egnet` network with
