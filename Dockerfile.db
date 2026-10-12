@@ -1,0 +1,26 @@
+FROM postgres:16-bookworm
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      cpanminus \
+      gcc \
+      libbusiness-isbn-perl \
+      libjson-xs-perl \
+      liblibrary-callnumber-lc-perl \
+      libmarc-record-perl \
+      libmarc-xml-perl \
+      libmime-base32-perl \
+      librose-uri-perl \
+      libuuid-tiny-perl \
+      libxml-libxml-perl \
+      libxml-libxslt-perl \
+      make \
+      postgresql-contrib-16 \
+      postgresql-plperl-16 \
+ && cpanm --notest --quiet String::KeyboardDistance Pass::OTP Text::Levenshtein::Damerau::XS \
+ && apt-get purge -y --auto-remove cpanminus gcc make \
+ && rm -rf /var/lib/apt/lists/* /root/.cpanm
+
+RUN printf '%s\n' 'jit = off' 'jit_above_cost = -1' >> /usr/share/postgresql/postgresql.conf.sample
