@@ -178,6 +178,12 @@ RUN set -eux; \
     chown opensrf /var/lock/apache2
 
 RUN set -eux; \
+    for script in /openils/lib/javascript/opensrf_ws.js /openils/lib/javascript/opensrf_ws_shared.js; do \
+      perl -0777 -pi -e 's{var path = \x27wss://\x27 \+ location\.host \+ \x27:\x27 \+\s*\n\s*WEBSOCKET_PORT_SSL \+ WEBSOCKET_URL_PATH;}{var path = \x27wss://\x27 + location.host + WEBSOCKET_URL_PATH;}' "$script"; \
+      grep -q 'location.host + WEBSOCKET_URL_PATH' "$script"; \
+    done
+
+RUN set -eux; \
     arch="$(dpkg --print-architecture)"; \
     curl -fsSL -o /tmp/websocketd.zip \
       "https://github.com/joewalnes/websocketd/releases/download/v0.4.1/websocketd-0.4.1-linux_${arch}.zip"; \
