@@ -181,8 +181,8 @@ RUN set -eux; \
 
 RUN set -eux; \
     for script in /openils/lib/javascript/opensrf_ws.js /openils/lib/javascript/opensrf_ws_shared.js; do \
-      perl -0777 -pi -e 's{var path = \x27wss://\x27 \+ location\.host \+ \x27:\x27 \+\s*\n\s*WEBSOCKET_PORT_SSL \+ WEBSOCKET_URL_PATH;}{var path = \x27wss://\x27 + location.host + WEBSOCKET_URL_PATH;}' "$script"; \
-      grep -q 'location.host + WEBSOCKET_URL_PATH' "$script"; \
+      perl -0777 -pi -e 's{var path = \x27wss://\x27 \+ location\.host \+ \x27:\x27 \+\s*\n\s*WEBSOCKET_PORT_SSL \+ WEBSOCKET_URL_PATH;}{var path = (location.protocol === \x27https:\x27 ? \x27wss://\x27 : \x27ws://\x27) + location.host + WEBSOCKET_URL_PATH;}' "$script"; \
+      grep -qF "var path = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + WEBSOCKET_URL_PATH;" "$script"; \
     done
 
 RUN set -eux; \
