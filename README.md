@@ -1,15 +1,15 @@
 # evergreen-testing-docker (etd)
 
 This project runs an Evergreen ILS development server in Docker. It builds
-Evergreen and OpenSRF from source on Debian bookworm, loads the concerto
-sample data into PostgreSQL and writes an Aspen Discovery export on every
-start. It is the Evergreen counterpart of koha-testing-docker. Aspen dev
-boxes and sandboxes connect to it over a Docker network.
+Evergreen and OpenSRF from source on Debian bookworm, ships the concerto
+sample data inside the database image and writes an Aspen Discovery export
+on every start. It is the Evergreen counterpart of koha-testing-docker.
+Aspen dev boxes and sandboxes connect to it over a Docker network.
 
 ## Requirements
 
 - Docker Engine and Docker Compose v2
-- About 6 GB of free disk for the images
+- About 8 GB of free disk for the images
 - About 1.5 GB of free RAM for a running stack
 - A lot more disk and RAM if you build the images yourself
 
@@ -23,8 +23,8 @@ bin/etd up -d
 bin/etd logs -f
 ```
 
-The first start creates the database and loads the sample data. That takes
-10 to 20 minutes. Wait for this line:
+The database image already holds the sample data, so the stack is ready in
+about a minute. Wait for this line:
 
 ```
 etd: evergreen is ready
@@ -37,15 +37,15 @@ Then open:
 - Gateway: http://localhost:8086/osrf-gateway-v1
 - HTTPS: https://localhost:8446/eg/opac/home (self signed certificate)
 
-The database volume survives `bin/etd down`. The second start skips the
-load and is ready in about a minute.
+The `db-data` volume survives `bin/etd down`, so anything you change in
+the database is still there on the next start.
 
 ## Logins
 
 | What | User | Password |
 |---|---|---|
 | Evergreen staff | `admin` | `demo123` |
-| Evergreen patron | barcode `PATRON_BARCODE` | `demo123` |
+| Evergreen patron | barcode `99999373998` | `demo123` |
 | PostgreSQL | `evergreen` | `evergreen` |
 
 Every sample user has the password `demo123`. To find more patron
@@ -57,15 +57,29 @@ bin/etd psql -c "SELECT c.barcode FROM actor.usr u JOIN actor.card c ON c.id = u
 
 ## Sample data
 
-`EG_SAMPLE_DATA` picks the dataset. It is only read when the database is
-first created, so change it before the first `bin/etd up` or run
-`bin/etd down -v` first.
+The sample data is loaded into the database image when the image is built.
+Nothing is loaded at start time.
+
+`EG_SAMPLE_DATA` picks the dataset. It is a build argument, so set it and
+run `bin/etd build` to get a different one. The published image carries the
+default.
 
 | Value | What you get |
 |---|---|
 | `concerto_enhanced` | The enhanced concerto set, the default |
 | `concerto` | The plain concerto set |
 | `none` | An empty Evergreen database |
+
+The `db-data` volume holds the live database. Docker fills an empty volume
+from the image the first time the stack runs. To throw your changes away
+and go back to the data in the image:
+
+```shell
+bin/etd down -v
+bin/etd up -d
+```
+
+That takes about a minute.
 
 ## Connecting Aspen
 
@@ -105,7 +119,7 @@ Copy `.env.example` to `.env` and edit it. `.env` is not tracked.
 | `EG_HTTP_PORT` | `8086` | Host port for Apache on 80 |
 | `EG_HTTPS_PORT` | `8446` | Host port for Apache on 443 |
 | `EG_PSQL_PORT` | `5433` | Host port for PostgreSQL on 5432 |
-| `EG_SAMPLE_DATA` | `concerto_enhanced` | Sample data loaded on first boot |
+| `EG_SAMPLE_DATA` | `concerto_enhanced` | Sample data baked into the database image |
 | `EG_REPO` | Evergreen on GitHub | Evergreen git remote |
 | `EG_REF` | `rel_3_17` | Evergreen branch or tag |
 | `OSRF_REPO` | OpenSRF on GitHub | OpenSRF git remote |
@@ -118,6 +132,10 @@ Copy `.env.example` to `.env` and edit it. `.env` is not tracked.
 bin/etd build
 bin/etd push
 ```
+
+`bin/etd build` builds the Evergreen image first and the database image
+second. The database image is built from the Evergreen image, and it loads
+the sample data during the build, so that step takes 10 to 20 minutes.
 
 `EG_REF` and `OSRF_REF` pick the source. Evergreen 3.17 talks to OpenSRF
 over Redis, and only OpenSRF `main` carries the Redis transport, so that
@@ -141,12 +159,12 @@ osrf_control --localhost --diagnostic
 tail -f /openils/var/log/osrfsys.log
 ```
 
-The container only writes `/eg_ready` once the database is loaded, the
-OpenSRF services are up, autogen has run, Apache answers and the Aspen
-export is written. If `/eg_ready` is missing, read the container logs to
-see which step is still running.
+The container only writes `/eg_ready` once the OpenSRF services are up,
+autogen has run, Apache answers and the Aspen export is written. If
+`/eg_ready` is missing, read the container logs to see which step is still
+running.
 
-To start over from an empty database:
+To start over from the data in the image:
 
 ```shell
 bin/etd down -v
