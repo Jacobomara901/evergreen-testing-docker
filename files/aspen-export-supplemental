@@ -1,0 +1,33 @@
+#!/bin/bash
+set -euo pipefail
+
+export PGHOST="${PGHOST:-db}"
+export PGPORT="${PGPORT:-5432}"
+export PGUSER="${PGUSER:-evergreen}"
+export PGPASSWORD="${PGPASSWORD:-evergreen}"
+export PGDATABASE="${PGDATABASE:-evergreen}"
+
+sql_dir=/usr/local/share/etd/sql
+export_root=/exports/aspen
+supplemental_dir="$export_root/supplemental"
+
+scratch="$(mktemp -d)"
+trap 'rm -rf "$scratch"' EXIT
+
+publish() {
+    local name="$1"
+    local staged="$supplemental_dir/.$name.tmp"
+    install -m 644 "$name" "$staged"
+    mv -f "$staged" "$supplemental_dir/$name"
+}
+
+mkdir -p "$supplemental_dir"
+cd "$scratch"
+
+psql -A -q -t -X -v ON_ERROR_STOP=1 -f "$sql_dir/aspen_daily.sql"
+
+publish parts.csv
+publish barcode_active_dates.csv
+publish holds.csv
+
+echo "aspen-export: refreshed the supplemental extracts"
