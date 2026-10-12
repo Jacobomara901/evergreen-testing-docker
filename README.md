@@ -132,6 +132,31 @@ container from `/exports/aspen`. The export holds `marc/all_bibs.mrc`,
 `marc/large_bibs.xml`, `marc_delta/all_bib.ids` and the three files under
 `supplemental/`. See the adb docs for the Aspen side.
 
+### Keeping Aspen in sync
+
+A real Evergreen site drips its changes into Aspen all day, so the stack
+does the same. Once the full export is written the container runs a sync
+loop in the background. Every pass it writes
+`marc_delta/all_bib_<timestamp>.ids`, which is the current list of visible
+bibs that Aspen uses for adds and deletes. When a bib, a call number or a
+copy has been edited since the last pass it also writes
+`marc_delta/incremental_changes_<timestamp>.ids` with those bib ids, and
+Aspen refetches each one over the API. The window is the interval plus 60
+seconds of overlap, so nothing falls between two passes. Files in
+`marc_delta` older than an hour are deleted, and the `all_bib.ids` from the
+full export is left alone. Every hour the loop also rewrites the three
+files under `supplemental/`, which carry item parts, barcode active dates
+and hold counts.
+
+`EG_SYNC_INTERVAL` is the number of seconds between passes and defaults to
+120. Set `EG_SYNC_INTERVAL=0` to turn the loop off and keep the one off
+export you get at start.
+
+On the Aspen side the dev box runs an `evergreen-sync` service. It copies
+any new file in `marc_delta` into the Aspen container every two minutes and
+refreshes the supplemental files every hour. Aspen's own Evergreen export
+job then picks the files up, processes them and deletes them.
+
 ## Commands
 
 | Command | What it does |
@@ -164,6 +189,7 @@ Copy `.env.example` to `.env` and edit it. `.env` is not tracked.
 | `EG_PSQL_PORT` | `5433` | Host port for PostgreSQL on 5432 |
 | `EG_SAMPLE_DATA` | `concerto_enhanced` | Sample data baked into the database image |
 | `EG_SERVICES` | `full` | `full` starts 33 OpenSRF services, `minimal` starts 14 |
+| `EG_SYNC_INTERVAL` | `120` | Seconds between Aspen sync passes, `0` turns the loop off |
 | `EG_REPO` | Evergreen on GitHub | Evergreen git remote |
 | `EG_REF` | `rel_3_17` | Evergreen branch or tag |
 | `OSRF_REPO` | OpenSRF on GitHub | OpenSRF git remote |
