@@ -190,6 +190,22 @@ maintenance branches, so `EG_REF` names a branch.
 `EG_STAFF_CLIENT=0` on a small machine. Without it the OPAC, the gateway
 and the Aspen export still work, but `/eg2/en-US/staff/` does not.
 
+## Published images
+
+A GitHub Actions workflow builds both images and pushes them to
+`git.homeserv.uk`. It runs on every push to `main`, every Monday at 04:17
+UTC and whenever you start it by hand. The amd64 and arm64 builds run on
+native runners of their own, then a third job joins them into a `latest`
+tag and a short commit SHA tag for each image.
+
+The repository needs two secrets. `FORGEJO_USER` is the account that
+pushes. `FORGEJO_TOKEN` is a token for that account with package write
+permission on `git.homeserv.uk`.
+
+To start it by hand, open the Actions tab, pick "Build and publish images"
+and use "Run workflow". When it finishes, `bin/etd pull` fetches the
+result.
+
 ## Troubleshooting
 
 OpenSRF logs are in `/openils/var/log` inside the Evergreen container.
