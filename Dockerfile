@@ -139,6 +139,8 @@ RUN set -eux; \
     chown -R opensrf:opensrf /exports /openils; \
     chmod -R a+rX /exports
 
+ENV OSRF_HOSTNAME=evergreen
+
 EXPOSE 80 443
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
