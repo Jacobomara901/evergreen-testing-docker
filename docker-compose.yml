@@ -14,7 +14,6 @@ services:
       db:
         condition: service_healthy
     environment:
-      EG_SAMPLE_DATA: ${EG_SAMPLE_DATA:-concerto_enhanced}
       EG_HTTP_PORT: ${EG_HTTP_PORT:-8086}
     ports:
       - "${EG_HTTP_PORT:-8086}:80"
@@ -24,7 +23,7 @@ services:
       interval: 15s
       timeout: 5s
       retries: 10
-      start_period: 45m
+      start_period: 5m
     networks:
       - egnet
 
@@ -33,6 +32,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.db
+      args:
+        ETD_IMAGE: ${ETD_IMAGE:-git.homeserv.uk/jacobomara901/evergreen-testing}
+        ETD_TAG: ${ETD_TAG:-latest}
+        EG_SAMPLE_DATA: ${EG_SAMPLE_DATA:-concerto_enhanced}
     environment:
       POSTGRES_USER: evergreen
       POSTGRES_PASSWORD: evergreen
@@ -40,9 +43,9 @@ services:
     ports:
       - "${EG_PSQL_PORT:-5433}:5432"
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql/evergreen
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U evergreen -d postgres"]
+      test: ["CMD-SHELL", "pg_isready -U evergreen -d evergreen"]
       interval: 5s
       timeout: 5s
       retries: 30
