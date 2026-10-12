@@ -28,7 +28,7 @@ RUN git clone --depth 1 --branch "$OSRF_REF" "$OSRF_REPO" /usr/src/opensrf \
 
 RUN cd /usr/src/opensrf \
  && autoreconf -i \
- && ./configure --prefix=/openils --sysconfdir=/openils/conf \
+ && ./configure --prefix=/openils --sysconfdir=/openils/conf --with-websockets-port=443 \
  && make -j2 \
  && make install \
  && echo /openils/lib > /etc/ld.so.conf.d/opensrf.conf \
@@ -154,6 +154,10 @@ RUN set -eux; \
     perl -pi -e 's{^KeepAliveTimeout.*}{KeepAliveTimeout 1}g' /etc/apache2/apache2.conf; \
     perl -pi -e 's{^MaxKeepAliveRequests.*}{MaxKeepAliveRequests 100}g' /etc/apache2/apache2.conf; \
     perl -pi -e 's{APACHE_RUN_USER=.*}{APACHE_RUN_USER=opensrf}g' /etc/apache2/envvars; \
+    printf '%s\n' \
+      '<IfModule mod_proxy_wstunnel.c>' \
+      '    ProxyPass /osrf-websocket-translator ws://127.0.0.1:7682 connectiontimeout=5 timeout=120' \
+      '</IfModule>' >> /etc/apache2/eg_vhost.conf; \
     printf '%s\n' \
       '<IfModule mpm_prefork_module>' \
       '    StartServers            1' \
