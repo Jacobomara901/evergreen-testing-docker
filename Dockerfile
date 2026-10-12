@@ -151,6 +151,8 @@ RUN set -eux; \
     perl -pi -e 's{^(\s*SSLProxyEngine\s+on)\s+#.*}{$1}g' /etc/apache2/sites-available/eg.conf; \
     perl -pi -e 's{^(\s*)#PerlSetVar OILSWebMediaPrefix "/media"}{$1PerlSetVar OILSWebMediaPrefix "/."}g' /etc/apache2/eg_vhost.conf; \
     grep -q '^\s*PerlSetVar OILSWebMediaPrefix "/\."' /etc/apache2/eg_vhost.conf; \
+    perl -pi -e 's{^(RewriteRule \^/eg2/\(\.\*\) )https://}{$1%{REQUEST_SCHEME}://}g' /etc/apache2/eg_vhost.conf; \
+    grep -qF 'RewriteRule ^/eg2/(.*) %{REQUEST_SCHEME}://%{HTTP_HOST}/eg2/en-US/$1' /etc/apache2/eg_vhost.conf; \
     perl -pi -e 's{^KeepAliveTimeout.*}{KeepAliveTimeout 1}g' /etc/apache2/apache2.conf; \
     perl -pi -e 's{^MaxKeepAliveRequests.*}{MaxKeepAliveRequests 100}g' /etc/apache2/apache2.conf; \
     perl -pi -e 's{APACHE_RUN_USER=.*}{APACHE_RUN_USER=opensrf}g' /etc/apache2/envvars; \
