@@ -133,9 +133,14 @@ bin/etd build
 bin/etd push
 ```
 
-`bin/etd build` builds the Evergreen image first and the database image
-second. The database image is built from the Evergreen image, and it loads
-the sample data during the build, so that step takes 10 to 20 minutes.
+One `Dockerfile` builds both images. The `base` stage holds Debian,
+OpenSRF, Evergreen and their dependencies. The `app` stage adds the Apache
+and OpenSRF configuration and the scripts. The `loader` stage loads the
+sample data into a PostgreSQL cluster and the `db` stage copies that
+cluster into the published database image. The data load only runs again
+when the Evergreen source or its dependencies change, so editing the
+entrypoint or the Apache settings rebuilds the app image in seconds and
+leaves the database image cached. A full load takes about 4 minutes.
 
 `EG_REF` and `OSRF_REF` pick the source. Evergreen 3.17 talks to OpenSRF
 over Redis, and only OpenSRF `main` carries the Redis transport, so that
