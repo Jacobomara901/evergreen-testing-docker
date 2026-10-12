@@ -198,6 +198,10 @@ UTC and whenever you start it by hand. The amd64 and arm64 builds run on
 native runners of their own, then a third job joins them into a `latest`
 tag and a short commit SHA tag for each image.
 
+The build cache lives in the registry as well, under the
+`buildcache-amd64` and `buildcache-arm64` tags on each image. They are not
+images you run.
+
 The repository needs two secrets. `FORGEJO_USER` is the account that
 pushes. `FORGEJO_TOKEN` is a token for that account with package write
 permission on `git.homeserv.uk`.

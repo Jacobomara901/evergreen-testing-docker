@@ -84,8 +84,8 @@ jobs:
           tags: |
             ${{ env.APP_IMAGE }}:latest-${{ matrix.arch }}
             ${{ env.APP_IMAGE }}:${{ steps.vars.outputs.short_sha }}-${{ matrix.arch }}
-          cache-from: type=gha,scope=app-${{ matrix.arch }}
-          cache-to: type=gha,scope=app-${{ matrix.arch }},mode=max
+          cache-from: type=registry,ref=${{ env.APP_IMAGE }}:buildcache-${{ matrix.arch }}
+          cache-to: type=registry,ref=${{ env.APP_IMAGE }}:buildcache-${{ matrix.arch }},mode=max
 
       - name: Build and push the database image
         uses: docker/build-push-action@v6
@@ -105,9 +105,9 @@ jobs:
             ${{ env.DB_IMAGE }}:latest-${{ matrix.arch }}
             ${{ env.DB_IMAGE }}:${{ steps.vars.outputs.short_sha }}-${{ matrix.arch }}
           cache-from: |
-            type=gha,scope=db-${{ matrix.arch }}
-            type=gha,scope=app-${{ matrix.arch }}
-          cache-to: type=gha,scope=db-${{ matrix.arch }},mode=max
+            type=registry,ref=${{ env.DB_IMAGE }}:buildcache-${{ matrix.arch }}
+            type=registry,ref=${{ env.APP_IMAGE }}:buildcache-${{ matrix.arch }}
+          cache-to: type=registry,ref=${{ env.DB_IMAGE }}:buildcache-${{ matrix.arch }},mode=max
 
   manifest:
     name: Publish multi-arch manifests
