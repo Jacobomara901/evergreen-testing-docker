@@ -14,28 +14,31 @@ case "$sample_data" in
 esac
 
 as_postgres() {
-    su postgres -c "$*"
+    runuser -u postgres -- "$@"
 }
 
 create_cluster() {
     install -d -o postgres -g postgres -m 3775 /var/run/postgresql
     install -d -o postgres -g postgres -m 700 "$pgdata"
-    as_postgres "$pgbin/initdb -D $pgdata --encoding UTF8 --locale C.UTF-8 --auth-local trust --auth-host scram-sha-256"
+    as_postgres "$pgbin/initdb" -D "$pgdata" --encoding UTF8 --locale C.UTF-8 \
+        --auth-local trust --auth-host scram-sha-256
     printf '%s\n' 'host all all all scram-sha-256' >> "$pgdata/pg_hba.conf"
 }
 
 start_cluster() {
-    as_postgres "$pgbin/pg_ctl -D $pgdata -w start -o '-c listen_addresses=127.0.0.1 -c jit=off -c fsync=off -c synchronous_commit=off -c max_wal_size=256MB -c min_wal_size=32MB'"
+    as_postgres "$pgbin/pg_ctl" -D "$pgdata" -w start \
+        -o "-c listen_addresses=127.0.0.1 -c jit=off -c fsync=off -c synchronous_commit=off -c max_wal_size=256MB -c min_wal_size=32MB"
 }
 
 stop_cluster() {
-    as_postgres "$pgbin/psql -q -v ON_ERROR_STOP=1 -d evergreen -c 'VACUUM ANALYZE'"
-    as_postgres "$pgbin/psql -q -v ON_ERROR_STOP=1 -d evergreen -c 'CHECKPOINT'"
-    as_postgres "$pgbin/pg_ctl -D $pgdata -m fast -w stop"
+    as_postgres "$pgbin/psql" -q -v ON_ERROR_STOP=1 -d evergreen -c 'VACUUM ANALYZE'
+    as_postgres "$pgbin/psql" -q -v ON_ERROR_STOP=1 -d evergreen -c 'CHECKPOINT'
+    as_postgres "$pgbin/pg_ctl" -D "$pgdata" -m fast -w stop
 }
 
 create_evergreen_role() {
-    as_postgres "$pgbin/psql -q -v ON_ERROR_STOP=1 -d postgres -c \"CREATE ROLE evergreen WITH LOGIN SUPERUSER PASSWORD 'evergreen'\""
+    as_postgres "$pgbin/psql" -q -v ON_ERROR_STOP=1 -d postgres \
+        -c "CREATE ROLE evergreen WITH LOGIN SUPERUSER PASSWORD 'evergreen'"
 }
 
 load_evergreen_database() {
