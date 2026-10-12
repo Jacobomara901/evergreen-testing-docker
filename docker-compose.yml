@@ -1,6 +1,6 @@
 services:
   evergreen:
-    image: ${ETD_IMAGE:-git.homeserv.uk/jacobomara901/evergreen-testing}:${ETD_TAG:-latest}
+    image: ${ETD_IMAGE:-ghcr.io/jacobomara901/evergreen-testing}:${ETD_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile
@@ -33,7 +33,7 @@ services:
       - egnet
 
   db:
-    image: ${ETD_DB_IMAGE:-git.homeserv.uk/jacobomara901/evergreen-testing-db}:${ETD_TAG:-latest}
+    image: ${ETD_DB_IMAGE:-ghcr.io/jacobomara901/evergreen-testing-db}:${ETD_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile

@@ -181,8 +181,8 @@ Copy `.env.example` to `.env` and edit it. `.env` is not tracked.
 | Variable | Default | What it does |
 |---|---|---|
 | `COMPOSE_PROJECT_NAME` | `egdev` | Compose project, so containers are `egdev-evergreen-1` and `egdev-db-1` |
-| `ETD_IMAGE` | `git.homeserv.uk/jacobomara901/evergreen-testing` | Evergreen image |
-| `ETD_DB_IMAGE` | `git.homeserv.uk/jacobomara901/evergreen-testing-db` | Database image |
+| `ETD_IMAGE` | `ghcr.io/jacobomara901/evergreen-testing` | Evergreen image |
+| `ETD_DB_IMAGE` | `ghcr.io/jacobomara901/evergreen-testing-db` | Database image |
 | `ETD_TAG` | `latest` | Tag for both images |
 | `EG_HTTP_PORT` | `8086` | Host port for Apache on 80 |
 | `EG_HTTPS_PORT` | `8446` | Host port for Apache on 443 |
@@ -229,7 +229,7 @@ and the Aspen export still work, but `/eg2/en-US/staff/` does not.
 ## Published images
 
 A GitHub Actions workflow builds both images and pushes them to
-`git.homeserv.uk`. It runs on every push to `main`, every Monday at 04:17
+`ghcr.io`. It runs on every push to `main`, every Monday at 04:17
 UTC and whenever you start it by hand. The amd64 and arm64 builds run on
 native runners of their own, then a third job joins them into a `latest`
 tag and a short commit SHA tag for each image.
@@ -238,9 +238,12 @@ The build cache lives in the registry as well, under the
 `buildcache-amd64` and `buildcache-arm64` tags on each image. They are not
 images you run.
 
-The repository needs two secrets. `FORGEJO_USER` is the account that
-pushes. `FORGEJO_TOKEN` is a token for that account with package write
-permission on `git.homeserv.uk`.
+The workflow pushes with the repository's own `GITHUB_TOKEN`, so it needs
+no secrets. The images are too large for a registry behind Cloudflare,
+which caps one upload at 100 MB, so they do not go to `git.homeserv.uk`.
+Free arm64 runners and free package storage need the repository to be
+public. On a private repository only the amd64 job runs for free and the
+packages must be made public by hand under the package settings.
 
 To start it by hand, open the Actions tab, pick "Build and publish images"
 and use "Run workflow". When it finishes, `bin/etd pull` fetches the

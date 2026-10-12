@@ -10,15 +10,16 @@ on:
 
 permissions:
   contents: read
+  packages: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  REGISTRY: git.homeserv.uk
-  APP_IMAGE: git.homeserv.uk/jacobomara901/evergreen-testing
-  DB_IMAGE: git.homeserv.uk/jacobomara901/evergreen-testing-db
+  REGISTRY: ghcr.io
+  APP_IMAGE: ghcr.io/jacobomara901/evergreen-testing
+  DB_IMAGE: ghcr.io/jacobomara901/evergreen-testing-db
   EG_REF: rel_3_17
   OSRF_REF: main
   EG_STAFF_CLIENT: '1'
@@ -65,8 +66,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.FORGEJO_USER }}
-          password: ${{ secrets.FORGEJO_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push the Evergreen image
         uses: docker/build-push-action@v6
@@ -126,8 +127,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.FORGEJO_USER }}
-          password: ${{ secrets.FORGEJO_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Join the per-arch tags into latest and the commit tag
         env:
