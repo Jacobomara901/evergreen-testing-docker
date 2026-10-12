@@ -20,8 +20,8 @@ mkdir -p "$export_root/marc" "$export_root/marc_delta" "$export_root/supplementa
 cd "$scratch"
 
 echo "aspen-export: building the id lists and supplemental extracts"
-psql -A -q -t -X -f "$sql_dir/aspen_full.sql"
-psql -A -q -t -X -f "$sql_dir/aspen_daily.sql"
+psql -A -q -t -X -v ON_ERROR_STOP=1 -f "$sql_dir/aspen_full.sql"
+psql -A -q -t -X -v ON_ERROR_STOP=1 -f "$sql_dir/aspen_daily.sql"
 
 echo "aspen-export: $(wc -l < marc21.ids) marc21 bibs, $(wc -l < marcxml.ids) bibs with many copies"
 
