@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+set -Eeuo pipefail
 
 export PATH=/openils/bin:$PATH
 export PGHOST=db
@@ -91,7 +91,13 @@ etd:   aspen export  /exports/aspen
 BANNER
 }
 
+report_startup_failure() {
+    echo "etd: startup failed running: $BASH_COMMAND" >&2
+    kill 1
+}
+
 finish_startup() {
+    trap report_startup_failure ERR
     wait_for_apache
     echo "etd: apache is answering, writing the aspen export"
     su opensrf -c /usr/local/bin/aspen-export
