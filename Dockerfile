@@ -66,7 +66,7 @@ RUN set -eux; \
 RUN cd /usr/src/evergreen \
  && autoreconf -i \
  && ./configure --prefix=/openils --sysconfdir=/openils/conf \
- && make -j2 \
+ && make \
  && make install \
  && ldconfig
 
