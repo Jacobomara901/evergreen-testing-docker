@@ -1,0 +1,66 @@
+#!/bin/bash
+set -euo pipefail
+
+pgbin=/usr/lib/postgresql/16/bin
+pgdata=/var/lib/postgresql/evergreen
+sample_data="${EG_SAMPLE_DATA:-concerto_enhanced}"
+
+sample_data_option=""
+case "$sample_data" in
+    concerto_enhanced) sample_data_option=--load-concerto-enhanced ;;
+    concerto) sample_data_option=--load-all-sample ;;
+    none) sample_data_option="" ;;
+    *) echo "db-load: EG_SAMPLE_DATA must be concerto_enhanced, concerto or none" >&2; exit 1 ;;
+esac
+
+as_postgres() {
+    su postgres -c "$*"
+}
+
+create_cluster() {
+    install -d -o postgres -g postgres -m 3775 /var/run/postgresql
+    install -d -o postgres -g postgres -m 700 "$pgdata"
+    as_postgres "$pgbin/initdb -D $pgdata --encoding UTF8 --locale C.UTF-8 --auth-local trust --auth-host scram-sha-256"
+    printf '%s\n' 'host all all all scram-sha-256' >> "$pgdata/pg_hba.conf"
+}
+
+start_cluster() {
+    as_postgres "$pgbin/pg_ctl -D $pgdata -w start -o '-c listen_addresses=127.0.0.1 -c jit=off -c fsync=off -c synchronous_commit=off -c max_wal_size=256MB -c min_wal_size=32MB'"
+}
+
+stop_cluster() {
+    as_postgres "$pgbin/psql -q -v ON_ERROR_STOP=1 -d evergreen -c 'VACUUM ANALYZE'"
+    as_postgres "$pgbin/psql -q -v ON_ERROR_STOP=1 -d evergreen -c 'CHECKPOINT'"
+    as_postgres "$pgbin/pg_ctl -D $pgdata -m fast -w stop"
+}
+
+create_evergreen_role() {
+    as_postgres "$pgbin/psql -q -v ON_ERROR_STOP=1 -d postgres -c \"CREATE ROLE evergreen WITH LOGIN SUPERUSER PASSWORD 'evergreen'\""
+}
+
+load_evergreen_database() {
+    cd /usr/src/evergreen
+    perl Open-ILS/src/support-scripts/eg_db_config \
+        --create-database --create-schema \
+        --user evergreen --password evergreen \
+        --hostname 127.0.0.1 --port 5432 --database evergreen \
+        --admin-user admin --admin-pass demo123 \
+        $sample_data_option < /dev/null
+}
+
+reset_admin_password() {
+    cd /usr/src/evergreen
+    perl Open-ILS/src/support-scripts/eg_db_config \
+        --user evergreen --password evergreen \
+        --hostname 127.0.0.1 --port 5432 --database evergreen \
+        --admin-user admin --admin-pass demo123 < /dev/null
+}
+
+create_cluster
+start_cluster
+create_evergreen_role
+load_evergreen_database
+reset_admin_password
+stop_cluster
+
+echo "db-load: baked the $sample_data dataset into $pgdata"
