@@ -8,16 +8,7 @@ export PGUSER=evergreen
 export PGPASSWORD=evergreen
 export PGDATABASE=evergreen
 
-EG_SAMPLE_DATA="${EG_SAMPLE_DATA:-concerto_enhanced}"
 EG_HTTP_PORT="${EG_HTTP_PORT:-8086}"
-
-sample_data_option=""
-case "$EG_SAMPLE_DATA" in
-    concerto_enhanced) sample_data_option=--load-concerto-enhanced ;;
-    concerto) sample_data_option=--load-all-sample ;;
-    none) sample_data_option="" ;;
-    *) echo "etd: EG_SAMPLE_DATA must be concerto_enhanced, concerto or none" >&2; exit 1 ;;
-esac
 
 add_opensrf_domains_to_hosts() {
     if grep -q private.localhost /etc/hosts; then
@@ -34,45 +25,13 @@ wait_for_database_server() {
     echo "etd: postgres is accepting connections"
 }
 
-evergreen_database_exists() {
-    local found
-    found="$(psql -X -A -t -d postgres -c "SELECT 1 FROM pg_database WHERE datname = 'evergreen'")"
-    [ "$found" = "1" ]
-}
-
-create_evergreen_database() {
-    echo "etd: creating the evergreen database and loading $EG_SAMPLE_DATA, this takes several minutes"
-    cd /usr/src/evergreen
-    perl Open-ILS/src/support-scripts/eg_db_config \
-        --update-config --service all \
-        --create-database --create-schema --create-offline \
-        --user evergreen --password evergreen \
-        --hostname "$PGHOST" --port "$PGPORT" --database evergreen \
-        --admin-user admin --admin-pass demo123 \
-        $sample_data_option < /dev/null
-    echo "etd: resetting the admin password"
-    perl Open-ILS/src/support-scripts/eg_db_config \
-        --user evergreen --password evergreen \
-        --hostname "$PGHOST" --port "$PGPORT" --database evergreen \
-        --admin-user admin --admin-pass demo123 < /dev/null
-    echo "etd: database ready"
-}
-
 point_opensrf_at_database() {
-    echo "etd: pointing opensrf.xml at the existing database"
+    echo "etd: pointing opensrf.xml at the database"
     cd /usr/src/evergreen
     perl Open-ILS/src/support-scripts/eg_db_config \
-        --update-config --service all \
+        --update-config --service all --create-offline \
         --user evergreen --password evergreen \
         --hostname "$PGHOST" --port "$PGPORT" --database evergreen < /dev/null
-}
-
-configure_database() {
-    if evergreen_database_exists; then
-        point_opensrf_at_database
-        return 0
-    fi
-    create_evergreen_database
 }
 
 start_redis() {
@@ -143,7 +102,7 @@ finish_startup() {
 rm -f /eg_ready
 add_opensrf_domains_to_hosts
 wait_for_database_server
-configure_database
+point_opensrf_at_database
 chown opensrf:opensrf /openils/conf/opensrf.xml
 start_redis
 start_memcached
