@@ -10,14 +10,14 @@ SELECT id FROM (
     FROM
         biblio.record_entry bre
     WHERE
-        bre.edit_date > NOW() - :'edit_window'::INTERVAL
+        bre.edit_date BETWEEN NOW() - :'edit_window'::INTERVAL AND NOW()
     UNION
     SELECT
         acn.record AS id
     FROM
         asset.call_number acn
     WHERE
-        acn.edit_date > NOW() - :'edit_window'::INTERVAL
+        acn.edit_date BETWEEN NOW() - :'edit_window'::INTERVAL AND NOW()
     UNION
     SELECT
         acn.record AS id
@@ -26,7 +26,7 @@ SELECT id FROM (
     JOIN
         asset.call_number acn ON acn.id = acp.call_number
     WHERE
-        acp.edit_date > NOW() - :'edit_window'::INTERVAL
+        acp.edit_date BETWEEN NOW() - :'edit_window'::INTERVAL AND NOW()
 ) changed
 WHERE id <> -1
 ORDER BY id;
