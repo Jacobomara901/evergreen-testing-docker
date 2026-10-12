@@ -39,7 +39,13 @@ load_env_file() {
 load_env_file "$env_file"
 
 compose() {
-    docker compose -p "${COMPOSE_PROJECT_NAME:-egdev}" "$@"
+    local project="${COMPOSE_PROJECT_NAME:-egdev}"
+    if [ -z "${ETD_PROXY_NETWORK:-}" ]; then
+        docker compose -p "$project" "$@"
+        return
+    fi
+    EG_INSTANCE="${EG_INSTANCE:-$project}" \
+        docker compose -p "$project" -f docker-compose.yml -f compose/proxy.yml "$@"
 }
 
 usage() {

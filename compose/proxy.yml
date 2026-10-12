@@ -1,0 +1,24 @@
+services:
+  evergreen:
+    ports: !reset []
+    networks:
+      egnet: null
+      etd-proxy:
+        aliases:
+          - "${EG_PREFIX:-}${EG_INSTANCE}${EG_SUFFIX:-}${EG_DOMAIN:-.localhost}"
+          - "${EG_INSTANCE}.localhost"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${ETD_PROXY_NETWORK:-proxy}"
+      - "traefik.http.routers.${EG_INSTANCE}-opac.rule=Host(`${EG_PREFIX:-}${EG_INSTANCE}${EG_SUFFIX:-}${EG_DOMAIN:-.localhost}`) || Host(`${EG_INSTANCE}.localhost`)"
+      - "traefik.http.routers.${EG_INSTANCE}-opac.entrypoints=web"
+      - "traefik.http.routers.${EG_INSTANCE}-opac.service=${EG_INSTANCE}-opac"
+      - "traefik.http.services.${EG_INSTANCE}-opac.loadbalancer.server.port=80"
+
+  db:
+    ports: !reset []
+
+networks:
+  etd-proxy:
+    name: ${ETD_PROXY_NETWORK:-proxy}
+    external: true
