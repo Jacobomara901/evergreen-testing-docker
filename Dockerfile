@@ -95,10 +95,10 @@ RUN set -eux; \
     perl -pi -e 's{APACHE_RUN_USER=.*}{APACHE_RUN_USER=opensrf}g' /etc/apache2/envvars; \
     printf '%s\n' \
       '<IfModule mpm_prefork_module>' \
-      '    StartServers            2' \
+      '    StartServers            1' \
       '    MinSpareServers         1' \
-      '    MaxSpareServers         3' \
-      '    MaxRequestWorkers      12' \
+      '    MaxSpareServers         2' \
+      '    MaxRequestWorkers       8' \
       '    MaxConnectionsPerChild 500' \
       '</IfModule>' > /etc/apache2/mods-available/mpm_prefork.conf; \
     mkdir -p /etc/apache2/ssl; \
