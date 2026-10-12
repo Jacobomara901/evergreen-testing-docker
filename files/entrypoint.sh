@@ -11,8 +11,10 @@ export PGDATABASE=evergreen
 EG_HTTP_PORT="${EG_HTTP_PORT:-8086}"
 EG_HTTPS_PORT="${EG_HTTPS_PORT:-8446}"
 EG_SERVICES="${EG_SERVICES:-full}"
+EG_SYNC_INTERVAL="${EG_SYNC_INTERVAL:-120}"
 
 osrf_config=/openils/conf/opensrf.xml
+supplemental_interval=3600
 
 staff_only_services=(
     opensrf.math
@@ -41,6 +43,14 @@ check_service_selection() {
         return 0
     fi
     echo "etd: EG_SERVICES must be 'full' or 'minimal', not '$EG_SERVICES'" >&2
+    exit 1
+}
+
+check_sync_interval() {
+    if [[ "$EG_SYNC_INTERVAL" =~ ^[0-9]+$ ]]; then
+        return 0
+    fi
+    echo "etd: EG_SYNC_INTERVAL must be a whole number of seconds, not '$EG_SYNC_INTERVAL'" >&2
     exit 1
 }
 
@@ -142,6 +152,39 @@ etd:   aspen export  /exports/aspen
 BANNER
 }
 
+run_incremental_export() {
+    su opensrf -c "EG_SYNC_INTERVAL=$EG_SYNC_INTERVAL /usr/local/bin/aspen-export-incremental" \
+        || echo "aspen-export: the incremental pass failed" >&2
+}
+
+run_supplemental_export() {
+    su opensrf -c /usr/local/bin/aspen-export-supplemental \
+        || echo "aspen-export: the supplemental pass failed" >&2
+}
+
+aspen_sync_loop() {
+    trap - ERR
+    local waited=0
+    while true; do
+        sleep "$EG_SYNC_INTERVAL"
+        run_incremental_export
+        waited=$(( waited + EG_SYNC_INTERVAL ))
+        if [ "$waited" -ge "$supplemental_interval" ]; then
+            waited=0
+            run_supplemental_export
+        fi
+    done
+}
+
+start_aspen_sync_loop() {
+    if [ "$EG_SYNC_INTERVAL" -eq 0 ]; then
+        echo "etd: EG_SYNC_INTERVAL=0, not syncing aspen after the full export"
+        return 0
+    fi
+    echo "etd: syncing aspen every ${EG_SYNC_INTERVAL}s, supplemental every ${supplemental_interval}s"
+    aspen_sync_loop &
+}
+
 report_startup_failure() {
     echo "etd: startup failed running: $BASH_COMMAND" >&2
     kill 1
@@ -154,10 +197,12 @@ finish_startup() {
     su opensrf -c /usr/local/bin/aspen-export
     touch /eg_ready
     print_ready_banner
+    start_aspen_sync_loop
 }
 
 rm -f /eg_ready
 check_service_selection
+check_sync_interval
 add_opensrf_domains_to_hosts
 wait_for_database_server
 restore_opensrf_config
