@@ -51,7 +51,7 @@ case "$command" in
     start) compose start "$@" ;;
     logs) compose logs "$@" evergreen ;;
     shell) compose exec --user opensrf evergreen bash ;;
-    psql) compose exec --env PGPASSWORD=evergreen db psql -U evergreen -d evergreen ;;
+    psql) compose exec --env PGPASSWORD=evergreen db psql -U evergreen -d evergreen "$@" ;;
     export) compose exec --user opensrf evergreen aspen-export ;;
     build) compose build "$@" ;;
     pull) compose pull "$@" ;;
