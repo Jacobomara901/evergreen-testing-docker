@@ -33,18 +33,25 @@ etd: evergreen is ready
 Then open:
 
 - OPAC: http://localhost:8086/eg/opac/home
-- Staff client: https://localhost:8446/eg2/en-US/staff/ (self signed certificate)
+- Staff client: http://localhost:8086/eg2/en-US/staff/
 - Gateway: http://localhost:8086/osrf-gateway-v1
 - HTTPS: https://localhost:8446/eg/opac/home (self signed certificate)
 
-The staff client only works over HTTPS. Evergreen redirects `/eg2/` to
-`https://<the host you asked for>/eg2/en-US/`, so the plain HTTP port sends
-you to an HTTPS URL on a port that does not speak HTTPS.
+The staff client works on http://localhost:8086/eg2/en-US/staff/ and on
+https://localhost:8446/eg2/en-US/staff/ with the self signed certificate.
+Browsers treat `localhost` as a secure context, so the parts of the staff
+client that need one are happy over plain HTTP there.
 
-The image patches one line of the installed OpenSRF JavaScript so the staff
-client's websocket follows the page's own host and port instead of a fixed
-443, which works because Apache proxies `/osrf-websocket-translator` on the
-same vhost.
+Behind a TLS terminating reverse proxy the container is reached over HTTP,
+and the proxy serves HTTPS to the browser. The image changes Evergreen's
+`/eg2/` locale redirect to keep the scheme it was asked on instead of
+forcing `https://`, so that redirect no longer sends you to an HTTPS URL on
+a port that does not speak HTTPS.
+
+The image also patches one line of the installed OpenSRF JavaScript so the
+staff client's websocket follows the page's own scheme, host and port
+instead of a fixed `wss://` on port 443, which works because Apache proxies
+`/osrf-websocket-translator` on the same vhost.
 
 The `db-data` volume survives `bin/etd down`, so anything you change in
 the database is still there on the next start.
