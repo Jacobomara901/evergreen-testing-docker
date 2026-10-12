@@ -1,0 +1,56 @@
+services:
+  evergreen:
+    image: ${ETD_IMAGE:-git.homeserv.uk/jacobomara901/evergreen-testing}:${ETD_TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        EG_REPO: ${EG_REPO:-https://github.com/evergreen-library-system/Evergreen.git}
+        EG_REF: ${EG_REF:-rel_3_17}
+        OSRF_REPO: ${OSRF_REPO:-https://github.com/evergreen-library-system/OpenSRF.git}
+        OSRF_REF: ${OSRF_REF:-main}
+        EG_STAFF_CLIENT: ${EG_STAFF_CLIENT:-1}
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      EG_SAMPLE_DATA: ${EG_SAMPLE_DATA:-concerto_enhanced}
+      EG_HTTP_PORT: ${EG_HTTP_PORT:-8086}
+    ports:
+      - "${EG_HTTP_PORT:-8086}:80"
+      - "${EG_HTTPS_PORT:-8446}:443"
+    healthcheck:
+      test: ["CMD", "test", "-f", "/eg_ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 45m
+    networks:
+      - egnet
+
+  db:
+    image: ${ETD_DB_IMAGE:-git.homeserv.uk/jacobomara901/evergreen-testing-db}:${ETD_TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile.db
+    environment:
+      POSTGRES_USER: evergreen
+      POSTGRES_PASSWORD: evergreen
+      POSTGRES_DB: postgres
+    ports:
+      - "${EG_PSQL_PORT:-5433}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U evergreen -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    networks:
+      - egnet
+
+volumes:
+  db-data:
+
+networks:
+  egnet:
