@@ -1,0 +1,37 @@
+#!/bin/bash
+set -euo pipefail
+
+conf=/openils/conf
+accounts=$conf/redis-accounts.txt
+
+account_password() {
+    grep "^ACL SETUSER $1 on >" "$accounts" | cut -d'>' -f2
+}
+
+opensrf_bus_password="$(account_password opensrf)"
+gateway_bus_password="$(account_password gateway)"
+router_bus_password="$(account_password router)"
+
+cp -f "$conf/opensrf_core.xml.example" "$conf/opensrf_core.xml"
+cp -f "$conf/opensrf.xml.example" "$conf/opensrf.xml"
+
+perl -pi -e 's/<!--\s+=+\s+-->/\n/g' "$conf/opensrf_core.xml"
+perl -0777 -pi -e 's/<!-- +Ejabberd +-->((?:\n|.)*?>)(?:\n(\s*)){2}/<!--\1-->\n\n/igs' "$conf/opensrf_core.xml"
+perl -0777 -pi -e 's/<!-- Redis -->\n *?<!--((?:\n|.)*?)-->\n/\1/igs' "$conf/opensrf_core.xml"
+
+perl -pi -e "s/OPENSRF_BUS_PASSWORD/$opensrf_bus_password/g" "$conf/opensrf_core.xml"
+perl -pi -e "s/GATEWAY_BUS_PASSWORD/$gateway_bus_password/g" "$conf/opensrf_core.xml"
+perl -pi -e "s/ROUTER_BUS_PASSWORD/$router_bus_password/g" "$conf/opensrf_core.xml"
+
+perl -pi -e 's{<max_children>\d+</max_children>}{<max_children>3</max_children>}g' "$conf/opensrf.xml"
+perl -pi -e 's{<min_children>\d+</min_children>}{<min_children>1</min_children>}g' "$conf/opensrf.xml"
+perl -pi -e 's{<min_spare_children>\d+</min_spare_children>}{<min_spare_children>1</min_spare_children>}g' "$conf/opensrf.xml"
+perl -pi -e 's{<max_spare_children>\d+</max_spare_children>}{<max_spare_children>2</max_spare_children>}g' "$conf/opensrf.xml"
+perl -pi -e 's{<unix_children>\d+</unix_children>}{<unix_children>3</unix_children>}g' "$conf/opensrf.xml"
+
+cp -f "$conf/srfsh.xml.example" /home/opensrf/.srfsh.xml
+perl -pi -e "s{<password>.*</password>}{<password>$opensrf_bus_password</password>}" /home/opensrf/.srfsh.xml
+chown opensrf:opensrf /home/opensrf/.srfsh.xml
+chmod 600 /home/opensrf/.srfsh.xml
+
+echo "opensrf-configure: wrote opensrf_core.xml, opensrf.xml and .srfsh.xml"

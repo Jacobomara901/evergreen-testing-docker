@@ -1,0 +1,21 @@
+#!/bin/bash
+set -euo pipefail
+
+accounts=/openils/conf/redis-accounts.txt
+
+cp -f "$accounts.example" "$accounts"
+
+set_account_password() {
+    local account="$1"
+    local password="$2"
+    perl -pi -e "s{^(ACL SETUSER $account on >).*}{\${1}$password}" "$accounts"
+}
+
+set_account_password opensrf opensrf_bus
+set_account_password gateway gateway_bus
+set_account_password router router_bus
+set_account_password default default_bus
+
+chmod 640 "$accounts"
+
+echo "redis-accounts-setup: wrote $accounts"
