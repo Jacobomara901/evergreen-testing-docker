@@ -83,8 +83,8 @@ RUN set -eux; \
 
 RUN set -eux; \
     cd /usr/src/evergreen/Open-ILS/examples/apache_24; \
-    cp eg.conf /etc/apache2/sites-available/eg.conf; \
-    cp eg_vhost.conf /etc/apache2/eg_vhost.conf; \
+    cp eg_24.conf /etc/apache2/sites-available/eg.conf; \
+    cp eg_vhost_24.conf /etc/apache2/eg_vhost.conf; \
     cp eg_startup /etc/apache2/eg_startup; \
     perl -pi -e 's{Require host 10\.0\.0\.0/8}{Require all granted}g' /etc/apache2/sites-available/eg.conf; \
     perl -pi -e 's{^\s*CustomLog\s+.*}{CustomLog /dev/stdout combined}g' /etc/apache2/sites-available/eg.conf; \
