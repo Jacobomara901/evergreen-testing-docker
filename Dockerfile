@@ -156,6 +156,10 @@ RUN set -eux; \
     perl -pi -e 's{^KeepAliveTimeout.*}{KeepAliveTimeout 1}g' /etc/apache2/apache2.conf; \
     perl -pi -e 's{^MaxKeepAliveRequests.*}{MaxKeepAliveRequests 100}g' /etc/apache2/apache2.conf; \
     perl -pi -e 's{APACHE_RUN_USER=.*}{APACHE_RUN_USER=opensrf}g' /etc/apache2/envvars; \
+    perl -0777 -pi -e 's{^[ \t]*RewriteCond %\{HTTPS\} off\n[ \t]*RewriteRule \S+ https://%\{HTTP_HOST\}%\{REQUEST_URI\}[^\n]*\n}{}gm' /etc/apache2/eg_vhost.conf; \
+    perl -pi -e 's{^(RewriteRule \S+ )https://(%\{HTTP_HOST\})}{$1%{REQUEST_SCHEME}://$2}' /etc/apache2/eg_vhost.conf; \
+    ! grep -qE '^[ \t]*RewriteCond %\{HTTPS\} off' /etc/apache2/eg_vhost.conf; \
+    ! grep -qE '^RewriteRule \S+ https://%\{HTTP_HOST\}' /etc/apache2/eg_vhost.conf; \
     printf '%s\n' \
       '<IfModule mod_proxy_wstunnel.c>' \
       '    ProxyPass /osrf-websocket-translator ws://127.0.0.1:7682 connectiontimeout=5 timeout=120' \
