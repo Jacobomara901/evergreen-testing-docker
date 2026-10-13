@@ -2,9 +2,9 @@
 
 This project runs an Evergreen ILS development server in Docker. It builds
 Evergreen and OpenSRF from source on Debian bookworm, ships the concerto
-sample data inside the database image and writes an Aspen Discovery export
-on every start. It is the Evergreen counterpart of koha-testing-docker.
-Aspen dev boxes and sandboxes connect to it over a Docker network.
+sample data inside the database image and writes a MARC export on every
+start. It is the Evergreen counterpart of koha-testing-docker. Discovery
+layers and sandboxes connect to it over a Docker network.
 
 ## Requirements
 
@@ -113,7 +113,7 @@ is enough to change it.
 EG_SERVICES=minimal bin/etd up -d
 ```
 
-`minimal` keeps everything the OPAC, the gateway and the Aspen export use:
+`minimal` keeps everything the OPAC, the gateway and the export use:
 `opensrf.settings`, `open-ils.actor`, `circ`, `search`, `supercat`, `cstore`,
 `pcrud`, `storage`, `fielder`, `trigger`, `hold-targeter`, `auth`,
 `auth_internal` and `auth_mfa`.
@@ -166,9 +166,9 @@ The host name is built as `<prefix><instance><suffix><domain>`.
 
 The traefik router names start with `evergreen-`. They never clash with the
 router names of koha-testing-docker, which end in `-opac` and `-intra`, or
-with those of the Aspen dev box, which start with `aspen-`. The host name can
-still clash. Give each stack a name that no Koha instance uses and no Aspen
-stack uses. You can also set `EG_PREFIX` or `EG_DOMAIN` instead.
+with those of the Aspen dev box. The host name can still clash. Give each
+stack a name that no other stack uses. You can also set `EG_PREFIX` or
+`EG_DOMAIN` instead.
 
 Each container carries the label `etd.proxy=true`. A traefik that serves these
 stacks only can filter on it with
@@ -192,11 +192,11 @@ and talks to the container over plain HTTP, which the staff client is happy
 with. The database keeps no host port either, so reach it with
 `bin/etd psql`.
 
-### Aspen and more than one stack
+### Discovery and more than one stack
 
-Aspen finds Evergreen by container name over the stack's own network, never
-by a host port. The container is always `<project>-evergreen-1`, so the
-project name is all the Aspen side needs:
+A discovery layer finds Evergreen by container name over the stack's own
+network, never by a host port. The container is always
+`<project>-evergreen-1`, so the project name is all the other side needs:
 
 ```shell
 adb up --ils evergreen -e eg2
@@ -205,25 +205,27 @@ adb up --ils evergreen -e eg2
 That works the same whether the stack publishes ports or sits behind the
 proxy.
 
-## Connecting Aspen
+## Connecting a discovery layer
 
-An Aspen dev box joins the `egdev_egnet` network with
+The export is a plain MARC export, so anything that reads MARC can take it.
+A discovery layer joins the `egdev_egnet` network with
 `adb up --ils evergreen` and copies the export out of the Evergreen
-container from `/exports/aspen`. The export holds `marc/all_bibs.mrc`,
+container from `/exports`. The export holds `marc/all_bibs.mrc`,
 `marc/large_bibs.xml`, `marc_delta/all_bib.ids` and the three files under
-`supplemental/`. See the adb docs for the Aspen side.
+`supplemental/`. The Aspen dev box is the consumer that reads it today, and
+the adb docs cover that side.
 
-### Keeping Aspen in sync
+### Keeping the export in sync
 
-A real Evergreen site drips its changes into Aspen all day, so the stack
-does the same. Once the full export is written the container runs a sync
-loop in the background. Every pass it writes
+A real Evergreen site drips its changes into the discovery layer all day,
+so the stack does the same. Once the full export is written the container
+runs a sync loop in the background. Every pass it writes
 `marc_delta/all_bib_<timestamp>.ids`, which is the current list of visible
-bibs that Aspen uses for adds and deletes. When a bib, a call number or a
-copy has been edited since the last pass it also writes
-`marc_delta/incremental_changes_<timestamp>.ids` with those bib ids, and
-Aspen refetches each one over the API. The window is the interval plus 60
-seconds of overlap, so nothing falls between two passes. Files in
+bibs the discovery layer uses for adds and deletes. When a bib, a call
+number or a copy has been edited since the last pass it also writes
+`marc_delta/incremental_changes_<timestamp>.ids` with those bib ids, and the
+discovery layer refetches each one over the API. The window is the interval
+plus 60 seconds of overlap, so nothing falls between two passes. Files in
 `marc_delta` older than an hour are deleted, and the `all_bib.ids` from the
 full export is left alone. Every hour the loop also rewrites the three
 files under `supplemental/`, which carry item parts, barcode active dates
@@ -233,10 +235,10 @@ and hold counts.
 120. Set `EG_SYNC_INTERVAL=0` to turn the loop off and keep the one off
 export you get at start.
 
-On the Aspen side the dev box runs an `evergreen-sync` service. It copies
-any new file in `marc_delta` into the Aspen container every two minutes and
-refreshes the supplemental files every hour. Aspen's own Evergreen export
-job then picks the files up, processes them and deletes them.
+The other side has to pick the files up. On the dev box an `evergreen-sync`
+service copies any new file in `marc_delta` into the discovery container
+every two minutes and refreshes the supplemental files every hour. The
+Evergreen export job there then processes the files and deletes them.
 
 ## Commands
 
@@ -249,7 +251,7 @@ job then picks the files up, processes them and deletes them.
 | `bin/etd logs [-f]` | Show the Evergreen container logs |
 | `bin/etd shell` | Bash in the Evergreen container as `opensrf` |
 | `bin/etd psql` | psql in the database container |
-| `bin/etd export` | Regenerate the Aspen export |
+| `bin/etd export` | Regenerate the MARC export |
 | `bin/etd build` | Build the images from this repository |
 | `bin/etd pull` | Pull the published images |
 | `bin/etd push` | Push the built images |
@@ -270,7 +272,7 @@ Copy `.env.example` to `.env` and edit it. `.env` is not tracked.
 | `EG_PSQL_PORT` | `5433` | Host port for PostgreSQL on 5432 |
 | `EG_SAMPLE_DATA` | `concerto_enhanced` | Sample data baked into the database image |
 | `EG_SERVICES` | `full` | `full` starts 33 OpenSRF services, `minimal` starts 14 |
-| `EG_SYNC_INTERVAL` | `120` | Seconds between Aspen sync passes, `0` turns the loop off |
+| `EG_SYNC_INTERVAL` | `120` | Seconds between sync passes, `0` turns the loop off |
 | `EG_REPO` | Evergreen on GitHub | Evergreen git remote |
 | `EG_REF` | `rel_3_17` | Evergreen branch or tag |
 | `OSRF_REPO` | OpenSRF on GitHub | OpenSRF git remote |
@@ -305,7 +307,7 @@ build against the project's own git server with
 `Open-ILS/web/js/ui/default/staff` and the Angular staff client under
 `Open-ILS/src/eg2`. The Angular build needs about 3 GB of RAM. Set
 `EG_STAFF_CLIENT=0` on a small machine. Without it the OPAC, the gateway
-and the Aspen export still work, but `/eg2/en-US/staff/` does not.
+and the export still work, but `/eg2/en-US/staff/` does not.
 
 ## Published images
 
@@ -342,7 +344,7 @@ tail -f /openils/var/log/osrfsys.log
 ```
 
 The container only writes `/eg_ready` once the OpenSRF services are up,
-autogen has run, Apache answers and the Aspen export is written. If
+autogen has run, Apache answers and the export is written. If
 `/eg_ready` is missing, read the container logs to see which step is still
 running.
 
