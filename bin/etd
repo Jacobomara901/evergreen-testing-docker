@@ -62,7 +62,7 @@ Commands:
     logs [-f]      Show the evergreen container logs
     shell          Bash in the evergreen container as opensrf
     psql           psql in the database container
-    export         Regenerate the Aspen export
+    export         Regenerate the MARC export
     build          Build the images from this repository
     pull           Pull the published images
     push           Push the built images
@@ -83,7 +83,7 @@ case "$command" in
     logs) compose logs "$@" evergreen ;;
     shell) compose exec --user opensrf evergreen bash ;;
     psql) compose exec --env PGPASSWORD=evergreen db psql -U evergreen -d evergreen "$@" ;;
-    export) compose exec --user opensrf evergreen aspen-export ;;
+    export) compose exec --user opensrf evergreen etd-export ;;
     build) compose build "$@" ;;
     pull) compose pull "$@" ;;
     push) compose push "$@" ;;
