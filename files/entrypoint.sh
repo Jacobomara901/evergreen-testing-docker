@@ -148,21 +148,21 @@ etd:   staff client  http://localhost:$EG_HTTP_PORT/eg2/en-US/staff/
 etd:   staff https    https://localhost:$EG_HTTPS_PORT/eg2/en-US/staff/
 etd:   gateway       http://localhost:$EG_HTTP_PORT/osrf-gateway-v1
 etd:   staff login   admin / demo123
-etd:   aspen export  /exports/aspen
+etd:   export        /exports
 BANNER
 }
 
 run_incremental_export() {
-    su opensrf -c "EG_SYNC_INTERVAL=$EG_SYNC_INTERVAL /usr/local/bin/aspen-export-incremental" \
-        || echo "aspen-export: the incremental pass failed" >&2
+    su opensrf -c "EG_SYNC_INTERVAL=$EG_SYNC_INTERVAL /usr/local/bin/etd-export-incremental" \
+        || echo "etd-export: the incremental pass failed" >&2
 }
 
 run_supplemental_export() {
-    su opensrf -c /usr/local/bin/aspen-export-supplemental \
-        || echo "aspen-export: the supplemental pass failed" >&2
+    su opensrf -c /usr/local/bin/etd-export-supplemental \
+        || echo "etd-export: the supplemental pass failed" >&2
 }
 
-aspen_sync_loop() {
+sync_loop() {
     trap - ERR
     local waited=0
     while true; do
@@ -176,13 +176,13 @@ aspen_sync_loop() {
     done
 }
 
-start_aspen_sync_loop() {
+start_sync_loop() {
     if [ "$EG_SYNC_INTERVAL" -eq 0 ]; then
-        echo "etd: EG_SYNC_INTERVAL=0, not syncing aspen after the full export"
+        echo "etd: EG_SYNC_INTERVAL=0, not syncing after the full export"
         return 0
     fi
-    echo "etd: syncing aspen every ${EG_SYNC_INTERVAL}s, supplemental every ${supplemental_interval}s"
-    aspen_sync_loop &
+    echo "etd: syncing every ${EG_SYNC_INTERVAL}s, supplemental every ${supplemental_interval}s"
+    sync_loop &
 }
 
 report_startup_failure() {
@@ -193,11 +193,11 @@ report_startup_failure() {
 finish_startup() {
     trap report_startup_failure ERR
     wait_for_apache
-    echo "etd: apache is answering, writing the aspen export"
-    su opensrf -c /usr/local/bin/aspen-export
+    echo "etd: apache is answering, writing the export"
+    su opensrf -c /usr/local/bin/etd-export
     touch /eg_ready
     print_ready_banner
-    start_aspen_sync_loop
+    start_sync_loop
 }
 
 rm -f /eg_ready

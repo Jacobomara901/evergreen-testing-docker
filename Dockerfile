@@ -208,16 +208,16 @@ COPY files/opensrf-configure /usr/local/bin/opensrf-configure
 RUN chmod 755 /usr/local/bin/opensrf-configure && /usr/local/bin/opensrf-configure
 
 COPY files/entrypoint.sh /usr/local/bin/entrypoint.sh
-COPY files/aspen-export /usr/local/bin/aspen-export
-COPY files/aspen-export-incremental /usr/local/bin/aspen-export-incremental
-COPY files/aspen-export-supplemental /usr/local/bin/aspen-export-supplemental
+COPY files/etd-export /usr/local/bin/etd-export
+COPY files/etd-export-incremental /usr/local/bin/etd-export-incremental
+COPY files/etd-export-supplemental /usr/local/bin/etd-export-supplemental
 COPY files/settings_ping.pl /usr/local/share/etd/settings_ping.pl
 COPY files/sql/ /usr/local/share/etd/sql/
 
 RUN set -eux; \
-    chmod 755 /usr/local/bin/entrypoint.sh /usr/local/bin/aspen-export \
-        /usr/local/bin/aspen-export-incremental /usr/local/bin/aspen-export-supplemental; \
-    mkdir -p /exports/aspen/marc /exports/aspen/marc_delta /exports/aspen/supplemental; \
+    chmod 755 /usr/local/bin/entrypoint.sh /usr/local/bin/etd-export \
+        /usr/local/bin/etd-export-incremental /usr/local/bin/etd-export-supplemental; \
+    mkdir -p /exports/marc /exports/marc_delta /exports/supplemental; \
     chown -R opensrf:opensrf /exports /openils; \
     chmod -R a+rX /exports
 
