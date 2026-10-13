@@ -5,15 +5,15 @@ services:
       egnet: null
       etd-proxy:
         aliases:
-          - "${EG_PREFIX:-}${EG_INSTANCE}${EG_SUFFIX:-}${EG_DOMAIN:-.localhost}"
-          - "${EG_INSTANCE}.localhost"
+          - "${EG_PREFIX:-}${EG_INSTANCE:-${COMPOSE_PROJECT_NAME:-egdev}}${EG_SUFFIX:-}${EG_DOMAIN:-.localhost}"
+          - "${EG_INSTANCE:-${COMPOSE_PROJECT_NAME:-egdev}}.localhost"
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=${ETD_PROXY_NETWORK:-proxy}"
-      - "traefik.http.routers.${EG_INSTANCE}-opac.rule=Host(`${EG_PREFIX:-}${EG_INSTANCE}${EG_SUFFIX:-}${EG_DOMAIN:-.localhost}`) || Host(`${EG_INSTANCE}.localhost`)"
-      - "traefik.http.routers.${EG_INSTANCE}-opac.entrypoints=web"
-      - "traefik.http.routers.${EG_INSTANCE}-opac.service=${EG_INSTANCE}-opac"
-      - "traefik.http.services.${EG_INSTANCE}-opac.loadbalancer.server.port=80"
+      - "traefik.http.routers.${EG_INSTANCE:-${COMPOSE_PROJECT_NAME:-egdev}}-opac.rule=Host(`${EG_PREFIX:-}${EG_INSTANCE:-${COMPOSE_PROJECT_NAME:-egdev}}${EG_SUFFIX:-}${EG_DOMAIN:-.localhost}`) || Host(`${EG_INSTANCE:-${COMPOSE_PROJECT_NAME:-egdev}}.localhost`)"
+      - "traefik.http.routers.${EG_INSTANCE:-${COMPOSE_PROJECT_NAME:-egdev}}-opac.entrypoints=web"
+      - "traefik.http.routers.${EG_INSTANCE:-${COMPOSE_PROJECT_NAME:-egdev}}-opac.service=${EG_INSTANCE:-${COMPOSE_PROJECT_NAME:-egdev}}-opac"
+      - "traefik.http.services.${EG_INSTANCE:-${COMPOSE_PROJECT_NAME:-egdev}}-opac.loadbalancer.server.port=80"
 
   db:
     ports: !reset []
