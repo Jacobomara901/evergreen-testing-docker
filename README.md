@@ -155,14 +155,24 @@ differ per stack.
 Set `ETD_PROXY_NETWORK` to the name of an existing traefik network and
 `bin/etd` puts `compose/proxy.yml` on top of the compose file. The stack
 then publishes no host ports at all, joins that network and carries traefik
-labels. Nothing can clash, so a sandbox manager can start one stack per
-sandbox with nothing but a project name:
+labels. A sandbox manager starts one stack per sandbox with nothing but a
+project name:
 
 ```shell
 ETD_PROXY_NETWORK=proxy COMPOSE_PROJECT_NAME=eg-foo bin/etd up -d
 ```
 
 The host name is built as `<prefix><instance><suffix><domain>`.
+
+The traefik router names start with `evergreen-`. They never clash with the
+router names of koha-testing-docker, which end in `-opac` and `-intra`, or
+with those of the Aspen dev box, which start with `aspen-`. The host name can
+still clash. Give each stack a name that no Koha instance uses and no Aspen
+stack uses. You can also set `EG_PREFIX` or `EG_DOMAIN` instead.
+
+Each container carries the label `etd.proxy=true`. A traefik that serves these
+stacks only can filter on it with
+`--providers.docker.constraints=Label(\`etd.proxy\`,\`true\`)`.
 
 | Variable | Default | What it does |
 |---|---|---|
