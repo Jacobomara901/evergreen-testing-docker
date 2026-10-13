@@ -10,7 +10,7 @@ export PGDATABASE="${PGDATABASE:-evergreen}"
 sql_dir=/usr/local/share/etd/sql
 osrf_config=/openils/conf/opensrf_core.xml
 exporter=/openils/bin/marc_export
-export_root=/exports/aspen
+export_root=/exports
 split_lines=2500
 
 scratch="$(mktemp -d)"
@@ -19,17 +19,17 @@ trap 'rm -rf "$scratch"' EXIT
 mkdir -p "$export_root/marc" "$export_root/marc_delta" "$export_root/supplemental"
 cd "$scratch"
 
-echo "aspen-export: building the id lists and supplemental extracts"
-psql -A -q -t -X -v ON_ERROR_STOP=1 -f "$sql_dir/aspen_full.sql"
-psql -A -q -t -X -v ON_ERROR_STOP=1 -f "$sql_dir/aspen_daily.sql"
+echo "etd-export: building the id lists and supplemental extracts"
+psql -A -q -t -X -v ON_ERROR_STOP=1 -f "$sql_dir/full.sql"
+psql -A -q -t -X -v ON_ERROR_STOP=1 -f "$sql_dir/daily.sql"
 
-echo "aspen-export: $(wc -l < marc21.ids) marc21 bibs, $(wc -l < marcxml.ids) bibs with many copies"
+echo "etd-export: $(wc -l < marc21.ids) marc21 bibs, $(wc -l < marcxml.ids) bibs with many copies"
 
 : > all_bibs.mrc
 split -l "$split_lines" marc21.ids chunk-
 for chunk in chunk-*; do
     [ -e "$chunk" ] || continue
-    echo "aspen-export: exporting $chunk"
+    echo "etd-export: exporting $chunk"
     "$exporter" --encoding UTF-8 --check-leader --items --exclude-hidden \
         --852b circ_lib --config "$osrf_config" < "$chunk" >> all_bibs.mrc
 done
@@ -52,4 +52,4 @@ install -m 644 parts.csv "$export_root/supplemental/parts.csv"
 install -m 644 barcode_active_dates.csv "$export_root/supplemental/barcode_active_dates.csv"
 install -m 644 holds.csv "$export_root/supplemental/holds.csv"
 
-echo "aspen-export: wrote $(du -sh "$export_root" | cut -f1) to $export_root"
+echo "etd-export: wrote $(du -sh "$export_root" | cut -f1) to $export_root"

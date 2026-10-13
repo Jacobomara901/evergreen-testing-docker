@@ -8,14 +8,14 @@ export PGPASSWORD="${PGPASSWORD:-evergreen}"
 export PGDATABASE="${PGDATABASE:-evergreen}"
 
 sql_dir=/usr/local/share/etd/sql
-export_root=/exports/aspen
+export_root=/exports
 delta_dir="$export_root/marc_delta"
 sync_interval="${EG_SYNC_INTERVAL:-120}"
 overlap_seconds=60
 keep_minutes=60
 
 if ! [[ "$sync_interval" =~ ^[0-9]+$ ]]; then
-    echo "aspen-export: EG_SYNC_INTERVAL must be a whole number of seconds, not '$sync_interval'" >&2
+    echo "etd-export: EG_SYNC_INTERVAL must be a whole number of seconds, not '$sync_interval'" >&2
     exit 1
 fi
 
@@ -39,7 +39,7 @@ prune_old_files() {
 mkdir -p "$delta_dir"
 cd "$scratch"
 
-psql -A -q -t -X -v ON_ERROR_STOP=1 -v "edit_window=$edit_window seconds" -f "$sql_dir/aspen_incremental.sql"
+psql -A -q -t -X -v ON_ERROR_STOP=1 -v "edit_window=$edit_window seconds" -f "$sql_dir/incremental.sql"
 
 stamp="$(date +%Y%m%d%H%M%S)"
 
@@ -51,4 +51,4 @@ if [ ! -s changed_bib.ids ]; then
 fi
 
 publish changed_bib.ids "incremental_changes_$stamp.ids"
-echo "aspen-export: $(wc -l < changed_bib.ids) changed bibs in incremental_changes_$stamp.ids"
+echo "etd-export: $(wc -l < changed_bib.ids) changed bibs in incremental_changes_$stamp.ids"

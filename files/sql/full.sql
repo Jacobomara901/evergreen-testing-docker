@@ -1,6 +1,6 @@
 \set copy_limit 300
 
-CREATE TEMPORARY TABLE aspen_many_copies AS
+CREATE TEMPORARY TABLE many_copies AS
     SELECT acn.record, COUNT(acp.id) AS acp_count
     FROM asset.copy acp
     JOIN asset.call_number acn ON acn.id = acp.call_number
@@ -18,7 +18,7 @@ CREATE TEMPORARY TABLE aspen_many_copies AS
 ;
 
 \o marcxml.ids
-SELECT DISTINCT record FROM aspen_many_copies ORDER BY record;
+SELECT DISTINCT record FROM many_copies ORDER BY record;
 
 \o marc21.ids
 SELECT DISTINCT id FROM (
@@ -44,7 +44,7 @@ SELECT DISTINCT id FROM (
            )
         )
 ) bibs
-WHERE id NOT IN (SELECT record FROM aspen_many_copies)
+WHERE id NOT IN (SELECT record FROM many_copies)
 ORDER BY id;
 
-\ir aspen_all_bib.sql
+\ir all_bib.sql

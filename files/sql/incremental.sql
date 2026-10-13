@@ -31,4 +31,4 @@ SELECT id FROM (
 WHERE id <> -1
 ORDER BY id;
 
-\ir aspen_all_bib.sql
+\ir all_bib.sql
